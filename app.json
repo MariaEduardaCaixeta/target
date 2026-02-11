@@ -2,6 +2,7 @@
   "expo": {
     "name": "target",
     "slug": "target",
+    "scheme": "target",
     "version": "1.0.0",
     "android": {
       "package": "com.mariaeduardacaixeta.target",
@@ -14,6 +15,9 @@
     "ios": {
       "bundleIdentifier": "com.mariaeduardacaixeta.target",
       "icon": "./assets/ios-icon.png"
-    }
+    },
+    "plugins": [
+      "expo-router"
+    ]
   }
 }
