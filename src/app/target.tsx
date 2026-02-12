@@ -16,7 +16,7 @@ export default function Target() {
                 />
 
                 <CurrencyInput 
-                    label="Valor alvo" 
+                    label="Valor alvo (R$)" 
                     value={0}
                     placeholder="Ex: R$ 1.000,00"
                 />
