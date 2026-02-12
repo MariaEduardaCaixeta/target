@@ -1,8 +1,8 @@
 import { Button } from "@/components/Button";
+import { CurrencyInput } from "@/components/CurrencyInput";
 import { Input } from "@/components/Input";
 import { PageHeader } from "@/components/PageHeader";
-import { router } from "expo-router";
-import { Text, View } from "react-native";
+import { View } from "react-native";
 
 export default function Target() {
     return (
@@ -10,7 +10,17 @@ export default function Target() {
             <PageHeader title="Meta" subtitle="Economize para..."/>
 
             <View style={{ marginTop: 32, gap: 24 }}>
-                <Input label="Nome da meta" placeholder="Ex: Viagem para praia, Apple Watch..."/>
+                <Input 
+                    label="Nome da meta" 
+                    placeholder="Ex: Viagem para praia, Apple Watch..."
+                />
+
+                <CurrencyInput 
+                    label="Valor alvo" 
+                    value={0}
+                    placeholder="Ex: R$ 1.000,00"
+                />
+
                 <Button title="Salvar"/>
             </View>
         </View>
