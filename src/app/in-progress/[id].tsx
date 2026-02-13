@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/PageHeader";
 import { Progress } from "@/components/Progress";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { Alert, View } from "react-native";
+import { Alert, StatusBar, View } from "react-native";
 import { List } from "@/components/List";
 import { Transaction, TransactionProps } from "@/components/Transaction";
 import { TransactionTypes } from "@/utils/TransactionTypes";
@@ -109,6 +109,7 @@ export default function InProgress() {
 
     return (
         <View style={{ flex: 1, padding: 24, gap: 32, }}>
+            <StatusBar barStyle="dark-content" />
             <PageHeader
                 title={targetDetails.name}
                 rightButton={{

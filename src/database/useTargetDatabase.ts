@@ -34,7 +34,7 @@ export function useTargetDatabase() {
         })
     }
 
-    function listBySavedValue() {
+    function listByPercentageValue() {
         return database.getAllAsync<TargetResponse>(`
             SELECT 
                 targets.id,
@@ -47,7 +47,7 @@ export function useTargetDatabase() {
             FROM targets 
             LEFT JOIN transactions ON transactions.target_id = targets.id
             GROUP BY targets.id, targets.name, targets.amount, targets.created_at, targets.updated_at
-            ORDER BY current DESC
+            ORDER BY percentage DESC
         `)
     }
 
@@ -88,7 +88,7 @@ export function useTargetDatabase() {
     }
     return {
         create,
-        listBySavedValue,
+        listBySavedValue: listByPercentageValue,
         show,
         update,
         remove

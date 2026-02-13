@@ -1,24 +1,22 @@
 import { Button } from "@/components/Button";
-import { HomeHeader } from "@/components/HomeHeader";
+import { HomeHeader, HomeHeaderProps } from "@/components/HomeHeader";
 import { List } from "@/components/List";
 import { Loading } from "@/components/Loading";
 import { Target, TargetProps } from "@/components/Target";
 import { useTargetDatabase } from "@/database/useTargetDatabase";
+import { useTransactionsDatabase } from "@/database/useTransactionsDatabase";
 import { numberToCurrency } from "@/utils/numberToCurrency";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { View, StatusBar, Alert } from "react-native";
 
-const summary = {
-    total: 'R$ 2.600,00',
-    input: { label: 'Entradas', value: 'R$6983,67' },
-    output: { label: 'Saídas', value: '-R$6983,67' }
-}
-
 export default function Index() {
+    const targetDB = useTargetDatabase();
+    const transactionsDB = useTransactionsDatabase();
+
     const [isFetching, setIsFetching] = useState(true);
     const [targets, setTargets] = useState<TargetProps[]>([]);
-    const targetDB = useTargetDatabase();
+    const [summary, setSummary] = useState<HomeHeaderProps>()
 
     async function fetchTargets(): Promise<TargetProps[]> {
         try {   
@@ -37,11 +35,34 @@ export default function Index() {
         }
     }
 
+    async function fetchSummary(): Promise<HomeHeaderProps> {
+        try {
+            const response = await transactionsDB.summary();
+            
+            return {
+                total: numberToCurrency(response.income + response.expense),
+                input: {
+                    label: "Entradas",
+                    value: numberToCurrency(response.income)
+                },
+                output: {
+                    label: "Saídas",
+                    value: numberToCurrency(response.expense)   
+                }
+            }
+        } catch (error) {
+            Alert.alert("Ops", "Não foi possível carregar o resumo. Error: " + error);
+            console.error("Error fetching summary: ", error);
+        }
+    }
+
     async function fetchData() {
         const targetDataPromise = fetchTargets();
+        const summaryDataPromise = fetchSummary();
 
-        const [targetData] = await Promise.all([targetDataPromise]);
+        const [targetData, summaryData] = await Promise.all([targetDataPromise, summaryDataPromise]);
         setTargets(targetData);
+        setSummary(summaryData);
         setIsFetching(false);
     }
 

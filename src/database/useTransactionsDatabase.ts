@@ -15,6 +15,11 @@ export type TransactionResponse = {
     updated_at: Date;
 }
 
+export type Summary = {
+    income: number;
+    expense: number;
+}
+
 export function useTransactionsDatabase() {
     const database = useSQLiteContext();
 
@@ -47,9 +52,19 @@ export function useTransactionsDatabase() {
         await database.runAsync("DELETE FROM transactions WHERE id = ?", id)
     }
 
+    function summary() {
+        return database.getFirstAsync<Summary>(`
+            SELECT 
+                COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0) AS income,
+                COALESCE(SUM(CASE WHEN amount < 0 THEN amount ELSE 0 END), 0) AS expense
+            FROM transactions
+        `)
+    }
+
     return {
         create,
         listByTargetId,
-        remove
+        remove,
+        summary
     }
 }
