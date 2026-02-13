@@ -11,6 +11,7 @@ import { useCallback, useState } from "react";
 import { numberToCurrency } from "@/utils/numberToCurrency";
 import { Loading } from "@/components/Loading";
 import { useTransactionsDatabase } from "@/database/useTransactionsDatabase";
+import dayjs from "dayjs";
 
 export default function InProgress() {
     const params = useLocalSearchParams<{ id: string }>()
@@ -46,12 +47,12 @@ export default function InProgress() {
             const transactions = await transactionsDB.listByTargetId(Number(params.id))
             setTransactions(
                 transactions.map((transaction) => ({
-                id: String(transaction.id),
-                type: transaction.amount > 0 ? TransactionTypes.INCOME : TransactionTypes.EXPENSE,
-                value: numberToCurrency(transaction.amount),
-                description: transaction.observation,
-                date: String(transaction.created_at)
-            })))
+                    id: String(transaction.id),
+                    type: transaction.amount > 0 ? TransactionTypes.INCOME : TransactionTypes.EXPENSE,
+                    value: numberToCurrency(transaction.amount),
+                    description: transaction.observation,
+                    date: dayjs(transaction.created_at).format("DD/MM/YYYY [às] HH:mm:ss")
+                })))
 
         } catch (error) {
             Alert.alert("Erro", "Não foi possível carregar as transações. Error: " + error.message)
@@ -65,6 +66,35 @@ export default function InProgress() {
 
         await Promise.all([fetchDetailsPromise, fetchTransactionsPromise])
         setIsFetching(false)
+    }
+
+    async function removeTransaction(id: string) {
+        try {
+            await transactionsDB.remove(Number(id))
+            fetchData()
+            Alert.alert("Sucesso", "Transação removida com sucesso.")
+        } catch (error) {
+            Alert.alert("Erro", "Não foi possível remover a transação. Error: " + error.message)
+            console.error("Error removing transaction:", error)
+        }
+    }
+
+    function handleRemoveTransaction(id: string) {
+        Alert.alert(
+            "Confirmação",
+            "Tem certeza que deseja remover esta transação?",
+            [
+                { text: "Cancelar", style: "cancel" },
+                {
+                    text: "Remover",
+                    style: "destructive",
+                    onPress: async () => {
+                        removeTransaction(id)
+                    }
+                }
+            ]
+        )
+
     }
 
     useFocusEffect(
@@ -97,7 +127,7 @@ export default function InProgress() {
                 renderItem={({ item }) => (
                     <Transaction
                         data={item}
-                        onRemove={() => { }}
+                        onRemove={() => handleRemoveTransaction(item.id)}
                     />
                 )}
                 emptyMessage="Nenhuma transação. Toque em nova transação para guardar seu primeiro dinheiro aqui."
