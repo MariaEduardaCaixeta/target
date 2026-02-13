@@ -4,7 +4,7 @@ import { Input } from "@/components/Input";
 import { PageHeader } from "@/components/PageHeader";
 import { useTargetDatabase } from "@/database/useTargetDatabase";
 import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, View } from "react-native";
 
 export default function Target() {
@@ -23,9 +23,29 @@ export default function Target() {
         setIsProcessing(true);
 
         if(params.id) {
-            // TODO: update target
+            update();
         } else {
             create();
+        }
+    }
+
+    async function update() {
+        try {
+            await targetDB.update({
+                id: Number(params.id),
+                name,
+                amount
+            });
+
+            Alert.alert("Sucesso!", "Meta atualizada com sucesso!", [
+                {
+                    text: "OK",
+                    onPress: () => router.back()
+                }
+            ]);
+        } catch (error) {
+            Alert.alert("Ops", "Não foi possível atualizar a meta. Error: " + error);
+            setIsProcessing(false);
         }
     }
 
@@ -33,7 +53,7 @@ export default function Target() {
         try {
             await targetDB.create({ name, amount });
 
-            Alert.alert("Nova meta", "Meta criada com sucesso!", [
+            Alert.alert("Sucesso!", "Meta criada com sucesso!", [
                 {
                     text: "OK",
                     onPress: () => {
@@ -49,9 +69,26 @@ export default function Target() {
         }
     }
 
+    async function fetchDetails(id: number) {
+        try {
+            const details = await targetDB.show(id);
+            setName(details.name);
+            setAmount(details.amount);
+        } catch (error) {
+            Alert.alert("Erro", "Não foi possível carregar os detalhes da meta. Error: " + error.message);
+            console.error("Error fetching target details:", error);
+        }
+    }
+
+    useEffect(() => {
+        if (params.id) {
+            fetchDetails(Number(params.id));
+        }
+    }, [params.id])
+
     return (
         <View style={{ flex: 1, padding: 24 }}> 
-            <PageHeader title="Meta" subtitle="Economize para..."/>
+            <PageHeader title="Meta" subtitle="Economize para alcançar sua meta financeira."/>
 
             <View style={{ marginTop: 32, gap: 24 }}>
                 <Input 
