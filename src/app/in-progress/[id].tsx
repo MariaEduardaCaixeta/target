@@ -10,27 +10,12 @@ import { TargetResponse, useTargetDatabase } from "@/database/useTargetDatabase"
 import { useCallback, useState } from "react";
 import { numberToCurrency } from "@/utils/numberToCurrency";
 import { Loading } from "@/components/Loading";
-
-const transactions: TransactionProps[] = [
-    {
-        id: "1",
-        value: "R$ 500,00",
-        date: "01/01/2024",
-        description: "Salário",
-        type: TransactionTypes.INCOME
-    },
-    {
-        id: "2",
-        value: "R$ 200,00",
-        date: "02/01/2024",
-        description: "Aluguel",
-        type: TransactionTypes.EXPENSE
-    },
-]
+import { useTransactionsDatabase } from "@/database/useTransactionsDatabase";
 
 export default function InProgress() {
     const params = useLocalSearchParams<{ id: string }>()
     const targetDB = useTargetDatabase()
+    const transactionsDB = useTransactionsDatabase()
 
     const [targetDetails, setTargetDetails] = useState({
         name: "",
@@ -39,8 +24,9 @@ export default function InProgress() {
         percentage: 0
     })
     const [isFetching, setIsFetching] = useState(true)
+    const [transactions, setTransactions] = useState<TransactionProps[]>([])
 
-    async function fetchDetails() {
+    async function fetchTargetDetails() {
         try {
             const details = await targetDB.show(Number(params.id))
             setTargetDetails({
@@ -55,10 +41,29 @@ export default function InProgress() {
         }
     }
 
-    async function fetchData() {
-        const fetchDetailsPromise = fetchDetails()
+    async function fetchTransactions() {
+        try {
+            const transactions = await transactionsDB.listByTargetId(Number(params.id))
+            setTransactions(
+                transactions.map((transaction) => ({
+                id: String(transaction.id),
+                type: transaction.amount > 0 ? TransactionTypes.INCOME : TransactionTypes.EXPENSE,
+                value: numberToCurrency(transaction.amount),
+                description: transaction.observation,
+                date: String(transaction.created_at)
+            })))
 
-        await Promise.all([fetchDetailsPromise])
+        } catch (error) {
+            Alert.alert("Erro", "Não foi possível carregar as transações. Error: " + error.message)
+            console.error("Error fetching transactions:", error)
+        }
+    }
+
+    async function fetchData() {
+        const fetchDetailsPromise = fetchTargetDetails()
+        const fetchTransactionsPromise = fetchTransactions()
+
+        await Promise.all([fetchDetailsPromise, fetchTransactionsPromise])
         setIsFetching(false)
     }
 
