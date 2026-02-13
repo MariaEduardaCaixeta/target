@@ -1,17 +1,15 @@
 import { PageHeader } from "@/components/PageHeader";
 import { Progress } from "@/components/Progress";
-import { router, useLocalSearchParams } from "expo-router";
-import { View } from "react-native";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { Alert, View } from "react-native";
 import { List } from "@/components/List";
 import { Transaction, TransactionProps } from "@/components/Transaction";
 import { TransactionTypes } from "@/utils/TransactionTypes";
 import { Button } from "@/components/Button";
-
-const details = {
-    current: "R$ 1.500,00",
-    target: "R$ 3.000,00",
-    percentage: 50,
-}
+import { TargetResponse, useTargetDatabase } from "@/database/useTargetDatabase";
+import { useCallback, useState } from "react";
+import { numberToCurrency } from "@/utils/numberToCurrency";
+import { Loading } from "@/components/Loading";
 
 const transactions: TransactionProps[] = [
     {
@@ -32,11 +30,52 @@ const transactions: TransactionProps[] = [
 
 export default function InProgress() {
     const params = useLocalSearchParams<{ id: string }>()
+    const targetDB = useTargetDatabase()
+
+    const [targetDetails, setTargetDetails] = useState({
+        name: "",
+        current: "R$ 0,00",
+        target: "R$ 0,00",
+        percentage: 0
+    })
+    const [isFetching, setIsFetching] = useState(true)
+
+    async function fetchDetails() {
+        try {
+            const details = await targetDB.show(Number(params.id))
+            setTargetDetails({
+                name: details.name,
+                current: numberToCurrency(details.current),
+                target: numberToCurrency(details.amount),
+                percentage: details.percentage
+            })
+        } catch (error) {
+            Alert.alert("Erro", "Não foi possível carregar os detalhes do alvo. Error: " + error.message)
+            console.error("Error fetching target details:", error)
+        }
+    }
+
+    async function fetchData() {
+        const fetchDetailsPromise = fetchDetails()
+
+        await Promise.all([fetchDetailsPromise])
+        setIsFetching(false)
+    }
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchData()
+        }, [])
+    )
+
+    if (isFetching) {
+        return <Loading />
+    }
 
     return (
         <View style={{ flex: 1, padding: 24, gap: 32, }}>
             <PageHeader
-                title="Apple Watch"
+                title={targetDetails.name}
                 rightButton={{
                     icon: 'edit',
                     onPress: () => { }
@@ -44,7 +83,7 @@ export default function InProgress() {
             />
 
             <Progress
-                data={details}
+                data={targetDetails}
             />
 
             <List
